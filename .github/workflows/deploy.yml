@@ -8,47 +8,48 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: silverdeath366
+        password: ${{ secrets.CR_PAT }}
 
-      - name: Build and Push Docker Image
-        run: |
-          cd rick-and-morty-api
-          docker build -t ghcr.io/${{ github.repository_owner }}/rickmorty-app:latest .
-          docker push ghcr.io/${{ github.repository_owner }}/rickmorty-app:latest
+    - name: Build and Push Docker Image
+      run: |
+        cd rick-and-morty-api
+        docker build -t ghcr.io/silverdeath366/rickmorty-app:latest .
+        docker push ghcr.io/silverdeath366/rickmorty-app:latest
 
-      - name: Set up Kind
-        uses: helm/kind-action@v1.7.0
+    - name: Set up Kind
+      uses: helm/kind-action@v1.7.0
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: 'v3.12.3'
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 'v3.12.3'
 
-      - name: Deploy with Helm
-        run: |
-          helm upgrade --install rickmorty ./helm/rick-and-morty-api \
-            --set image.repository=ghcr.io/${{ github.repository_owner }}/rickmorty-app \
-            --set image.tag=latest
+    - name: Deploy with Helm
+      run: |
+        helm upgrade --install rickmorty ./rick-and-morty-api \
+          --set image.repository=ghcr.io/silverdeath366/rickmorty-app \
+          --set image.tag=latest
 
-      - name: Wait for Pod to be Ready
-        run: |
-          kubectl rollout status deployment/rickmorty --timeout=90s
+    - name: Wait for Pod to be Ready
+      run: |
+        kubectl rollout status deployment/rickmorty --timeout=90s
 
-      - name: Test /healthcheck
-        run: |
-          kubectl port-forward svc/rickmorty 5000:5000 &
-          sleep 5
-          curl -f http://localhost:5000/healthcheck
-          curl -f http://localhost:5000/characters
+    - name: Test Endpoints
+      run: |
+        kubectl port-forward svc/rickmorty 5000:5000 &
+        sleep 5
+        curl -f http://localhost:5000/healthcheck
+        curl -f http://localhost:5000/characters
