@@ -47,16 +47,18 @@ jobs:
       run: |
         kubectl rollout status deployment/rickmorty --timeout=90s
 
+    - name: Show Pod Logs (if failed)
+      if: failure()
+      run: |
+        echo "--- POD LIST ---"
+        kubectl get pods -o wide
+        echo "--- POD LOGS ---"
+        POD=$(kubectl get pods -l app=rickmorty -o jsonpath="{.items[0].metadata.name}")
+        kubectl logs $POD || echo "No logs found"
+
     - name: Test Endpoints
       run: |
         kubectl port-forward svc/rickmorty 5000:5000 &
         sleep 5
         curl -f http://localhost:5000/healthcheck
         curl -f http://localhost:5000/characters
-        - name: Show Pod Logs (if failed)
-      if: failure()
-      run: |
-        kubectl get pods
-        POD=$(kubectl get pods -l app=rickmorty -o jsonpath="{.items[0].metadata.name}")
-        kubectl logs $POD
-
