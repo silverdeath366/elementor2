@@ -53,3 +53,10 @@ jobs:
         sleep 5
         curl -f http://localhost:5000/healthcheck
         curl -f http://localhost:5000/characters
+        - name: Show Pod Logs (if failed)
+      if: failure()
+      run: |
+        kubectl get pods
+        POD=$(kubectl get pods -l app=rickmorty -o jsonpath="{.items[0].metadata.name}")
+        kubectl logs $POD
+
