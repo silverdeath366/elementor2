@@ -8,8 +8,3 @@ image:
 service:
   type: ClusterIP
   port: 5000
-
-ingress:
-  enabled: true  # Can be false if you not expose ingress
-
-resources: {}

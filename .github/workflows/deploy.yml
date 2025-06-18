@@ -37,6 +37,14 @@ jobs:
       with:
         version: 'v3.12.3'
 
+    - name: Create Docker Pull Secret
+      run: |
+        kubectl create secret docker-registry ghcr-creds \
+          --docker-server=ghcr.io \
+          --docker-username=silverdeath366 \
+          --docker-password=${{ secrets.CR_PAT }} \
+          --docker-email=you@example.com
+
     - name: Deploy with Helm
       run: |
         helm upgrade --install rickmorty ./rick-and-morty-api \
