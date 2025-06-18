@@ -24,7 +24,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          cd helm/rick-and-morty-api
+          cd rick-and-morty-api
           docker build -t ghcr.io/${{ github.repository_owner }}/rickmorty-app:latest .
           docker push ghcr.io/${{ github.repository_owner }}/rickmorty-app:latest
 
