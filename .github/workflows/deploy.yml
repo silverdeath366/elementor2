@@ -1,4 +1,4 @@
-name: CI/CD to Kind with Helm
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,67 +6,46 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: silverdeath366
-        password: ${{ secrets.CR_PAT }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and Push Docker Image
-      run: |
-        cd rick-and-morty-api
-        docker build -t ghcr.io/silverdeath366/rickmorty-app:latest .
-        docker push ghcr.io/silverdeath366/rickmorty-app:latest
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: docker.io/${{ secrets.DOCKER_USERNAME }}/rickmorty-app:latest
 
-    - name: Set up Kind
-      uses: helm/kind-action@v1.7.0
+      - name: Set up Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
 
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: 'v3.12.3'
+      - name: Deploy Helm Chart
+        run: |
+          helm upgrade --install rickmorty ./helm/rick-and-morty-api --wait
 
-    - name: Create Docker Pull Secret
-      run: |
-        kubectl create secret docker-registry ghcr-creds \
-          --docker-server=ghcr.io \
-          --docker-username=silverdeath366 \
-          --docker-password=${{ secrets.CR_PAT }} \
-          --docker-email=you@example.com
+      - name: Wait for Deployment to be ready
+        run: |
+          kubectl rollout status deployment rickmorty-rick-and-morty-api
 
-    - name: Deploy with Helm
-      run: |
-        helm upgrade --install rickmorty ./rick-and-morty-api \
-          --set image.repository=ghcr.io/silverdeath366/rickmorty-app \
-          --set image.tag=latest
-
-    - name: Wait for Pod to be Ready
-      run: |
-        kubectl rollout status deployment/rickmorty --timeout=90s
-
-    - name: Show Pod Logs (if failed)
-      if: failure()
-      run: |
-        echo "--- POD LIST ---"
-        kubectl get pods -o wide
-        echo "--- POD LOGS ---"
-        POD=$(kubectl get pods -l app=rickmorty -o jsonpath="{.items[0].metadata.name}")
-        kubectl logs $POD || echo "No logs found"
-
-    - name: Test Endpoints
-      run: |
-        kubectl port-forward svc/rickmorty 5000:5000 &
-        sleep 5
-        curl -f http://localhost:5000/healthcheck
-        curl -f http://localhost:5000/characters
+      - name: Port forward and run health checks
+        run: |
+          kubectl port-forward svc/rickmorty-rick-and-morty-api 5000:5000 &
+          sleep 10
+          curl -f http://localhost:5000/healthcheck
+          curl -f http://localhost:5000/characters
