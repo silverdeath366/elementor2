@@ -25,7 +25,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./helm/rick-and-morty-api
           push: true
           tags: docker.io/silverdeath366/rickmorty-app:latest
 
