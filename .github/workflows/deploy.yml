@@ -39,6 +39,9 @@ jobs:
 
       - name: 🔄 Port-forward and test /healthcheck
         run: |
-          kubectl port-forward svc/rickmorty-api 8080:80 &
+          echo "⏳ Waiting for service startup..."
+          kubectl port-forward svc/rickmorty 8080:5000 &
           sleep 5
-          curl --fail http://localhost:8080/healthcheck || (echo "❌ Healthcheck failed" && exit 1)
+          curl --fail http://localhost:8080/healthcheck || (echo "❌ healthcheck failed" && exit 1)
+
+
