@@ -37,8 +37,8 @@ jobs:
         run: |
           helm upgrade --install rickmorty ./rick-and-morty-api
 
-      - name: 🔍 Test API Healthcheck
+      - name: 🔄 Port-forward and test /healthcheck
         run: |
-          echo "Waiting for service..."
-          sleep 10
-          curl --fail http://localhost/healthcheck || (echo "❌ Healthcheck failed" && exit 1)
+          kubectl port-forward svc/rickmorty-api 8080:80 &
+          sleep 5
+          curl --fail http://localhost:8080/healthcheck || (echo "❌ Healthcheck failed" && exit 1)
