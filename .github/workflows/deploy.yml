@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Deploy Rick & Morty API
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
@@ -22,30 +22,27 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: docker.io/${{ secrets.DOCKER_USERNAME }}/rickmorty-app:latest
+          tags: docker.io/silverdeath366/rickmorty-app:latest
 
-      - name: Set up Kubeconfig
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set KUBECONFIG for local cluster
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Deploy Helm Chart
+      - name: Port-forward and test app
         run: |
-          helm upgrade --install rickmorty ./helm/rick-and-morty-api --wait
-
-      - name: Wait for Deployment to be ready
-        run: |
-          kubectl rollout status deployment rickmorty-rick-and-morty-api
-
-      - name: Port forward and run health checks
-        run: |
-          kubectl port-forward svc/rickmorty-rick-and-morty-api 5000:5000 &
-          sleep 10
+          nohup kubectl port-forward svc/rickmorty-rick-and-morty-api 5000:5000 &
+          sleep 5
           curl -f http://localhost:5000/healthcheck
           curl -f http://localhost:5000/characters
