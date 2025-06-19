@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+env/
+
+# Docker
+*.log
+*.pid
+*.tar
+*.bak
+*.swp
+.dockerignore
+
+# Virtual Environments
+.venv/
+ENV/
+
+# Kubernetes
+*.kube
+*.minikube
+.kube/
+minikube/
+
+# Helm
+*.tgz
+charts/
+helm-charts/
+helm/values.yaml.backup
+
+# Node (in case of frontend build)
+node_modules/
+npm-debug.log*
+
+# VSCode / IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# GitHub Actions secrets
+kubeconfig
+.kubeconfig
+*.key
+
+# Output
+output.csv
+
+# Ngrok (optional)
+.ngrok.*
